@@ -31,6 +31,8 @@ const io = new Server(server, {
     }
 });
 
+
+// let activeSubscriptions = {};
 // Socket.IO connection event
 io.on('connection', (socket) => {
     console.log('A WebSocket client connected');
@@ -52,14 +54,17 @@ io.on('connection', (socket) => {
             }
         });
 
-        // Subscribe to the monitor_id's data topic if not already subscribed
-        mqttClient.subscribe(`mediot/${monitor_id}/data`, (err) => {
-            if (err) {
-                console.error(`Failed to subscribe to mediot/${monitor_id}/data`, err);
-            } else {
-                console.log(`Subscribed to mediot/${monitor_id}/data`);
-            }
-        });
+          // Subscribe to the monitor_id's data topic if not already subscribed
+        //   if (!activeSubscriptions[monitor_id]) {
+            mqttClient.subscribe(`mediot/${monitor_id}/data`, (err) => {
+                if (err) {
+                    console.error(`Failed to subscribe to mediot/${monitor_id}/data`, err);
+                } else {
+                    console.log(`Subscribed to mediot/${monitor_id}/data`);
+                    // activeSubscriptions[monitor_id] = true;
+                }
+            });
+        // }
     });
 
     // Handle WebSocket disconnect
@@ -83,8 +88,9 @@ mqttClient.on('message', (topic, message) => {
     if (topic.startsWith('mediot/') && topic.endsWith('/data')) {
 
         // Emit the message to all connected WebSocket clients
+        const  topicMonitorId = topic.split('/')[1];
         io.emit('MonitorVitalData', {
-            Timestamp, TEMP, SPO2, NIBP, PR, HR
+           monitor_id:topicMonitorId, Timestamp, TEMP, SPO2, NIBP, PR, HR
         });
     }
 });
@@ -98,3 +104,9 @@ mqttClient.on('error', (err) => {
 server.listen(5500, () => {
     console.log('Server is listening on port 5500');
 });
+
+
+/**
+ * dicom
+ * {"patientID": "01545404", "patientName": "CG26NIDA8M", "path": "2024/Octobre/01545404/1.2.826.0.1.3680043.8.498.31729371913626331470540469038743520585/1.2.826.0.1.3680043.8.498.38045366363642112263722022653625965462/1.2.826.0.1.3680043.8.498.80550631056456361247374871408333560343"}
+ */
